@@ -1,6 +1,6 @@
 var con = console;
 var QLD = "QLD", NSW = "NSW";
-var font = "200px impact";
+var font = "200px helvetica" // impact";
 
 function canvas(width, height, append) {
   var a = document.createElement("canvas");
@@ -26,21 +26,28 @@ function canvas(width, height, append) {
 var red = "#f00";
 
 var bmpSize = 200;
-var outputScale = 1;
-var dim = bmpSize * outputScale;
+var outputScale = 4;
+var dim = bmpSize;
 
 function render(state, score, x, y) {
+  
   var count = 0;
-  var output = canvas(dim, dim, true);
+  var min = 0;
+
+
+  var output = canvas(dim * outputScale, dim * outputScale, true);
   var test = canvas(dim, dim);
   var progress = canvas(dim, dim);
+
+  var c0 = document.createElement("div");
+  document.body.appendChild(c0);
 
   function pointInShape(point) {
 
     test.ctx.globalCompositeOperation = 'source-over';
     test.ctx.drawImage(progress.canvas, 0, 0);
     test.ctx.globalCompositeOperation = 'source-in';
-    drawShape(test.ctx, point, false);
+    drawShape(test.ctx, point, false, 1);
 
     var pad = 2;
 
@@ -71,21 +78,23 @@ function render(state, score, x, y) {
 
   function newPosition() {
     var pad = 0;
+    
+
     return {
       x: pad + Math.random() * (dim - pad * 2),
       y: pad + Math.random() * (dim - pad * 2),
-      size: 0.1 + Math.random() * 6// / ((count + 1) * 0.01)
+      size: min// + Math.random() * 3// / ((count + 1) * 0.01)
     }
   }
 
-  function drawShape(target, props, fx) {
+  function drawShape(target, props, fx, overScale) {
     if (fx) {
-      target.shadowColor = '#fff';
-      target.shadowBlur = 2;
+      // target.shadowColor = '#fff';
+      // target.shadowBlur = 2;
     }
-    var scale = 2 * props.size / bmpSize;
+    var scale = 2 * props.size / bmpSize * overScale;
     target.save();
-    target.translate(props.x - props.size, props.y - props.size);
+    target.translate((props.x - props.size) * overScale, (props.y - props.size) * overScale);
     target.scale(scale, scale);
     // target.drawImage(piImage, 0, 0);
     target.font = font;
@@ -99,18 +108,27 @@ function render(state, score, x, y) {
     var ok = pointInShape(proposed);
     if (ok) {
       count++;
-      drawShape(output.ctx, proposed, true,);
-      drawShape(progress.ctx, proposed, true);
+      drawShape(output.ctx, proposed, true, outputScale);
+      drawShape(progress.ctx, proposed, true, 1);
     }
   }
 
   function r() {
+    min = Math.pow(1.2, (10 - Math.floor(count / 1000)));
+
     var iterationsPerFrame = 30;
     for (var i = 0; i < iterationsPerFrame; i++) {
       generate(true);
       generate(false);
     }
-    requestAnimationFrame(r);
+    if (min > 0.5) {
+      requestAnimationFrame(r);
+    } else {
+      min += "done!";
+    }
+    c0.innerHTML = [count,min].join(" ");
+
+    
     // setTimeout(r, 1000);
   }
 
@@ -120,7 +138,7 @@ function render(state, score, x, y) {
   progress.ctx.globalCompositeOperation = 'destination-out';
   progress.ctx.save();
   progress.ctx.translate(dim * x, dim * y);
-  progress.ctx.scale(outputScale, outputScale);
+  // progress.ctx.scale(outputScale, outputScale);
   progress.ctx.font = font;
   progress.ctx.fillText(score, 0, 0);
   progress.ctx.restore();
